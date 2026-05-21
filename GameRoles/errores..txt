@@ -1,0 +1,108 @@
+RS01 — Variable no declarada
+
+Juego TestRS01 Mundo_abierto
+
+vida = 100
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS02 — Variable duplicada
+
+Juego TestRS02 Mundo_abierto
+
+Simulacion vida = 100
+Simulacion vida = 200
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+
+RS03 — Tipos incompatibles en operaciones
+
+Juego TestRS03 Mundo_abierto
+
+Simulacion vida = 100
+Simulacion_vida nombre = "Rodrigo"
+
+vida = vida Lucha nombre
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS04 — División entre cero
+
+Juego TestRS04 Mundo_abierto
+
+Simulacion vida = 100
+vida = vida Soulslike 0
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS05 — Comparador inválido
+
+Juego TestRS05 Mundo_abierto
+
+Simulacion vida = 100
+
+Accion(vida 50) Mundo_abierto
+    FPS("Error")
+Sandbox
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS06 — Bloque condicional incompleto
+
+Juego TestRS06 Mundo_abierto
+
+Simulacion vida = 100
+
+Accion(vida Estrategia 50)
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS07 — FOR incompleto
+
+Juego TestRS07 Mundo_abierto
+
+Simulacion i = 0
+
+Aventura(i = 0; i RTS 5) Mundo_abierto
+    FPS(i)
+Sandbox
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS08 — Las condiciones (if, while, for) solo pueden comparar valores numéricos. 
+
+Juego TestRS08 Mundo_abierto
+
+Simulacion vida = 100
+Simulacion_vida nombre = "Jugador"
+
+Accion(nombre Estrategia vida) Mundo_abierto
+    FPS("Esto no deberia ejecutarse")
+Sandbox
+
+Sandbox
+
+---------------------------------------------------------------------------------------------------------
+
+RS09 — Expresión inválida en impresión
+
+Juego TestRS09 Mundo_abierto
+
+FPS()
+
+Sandbox

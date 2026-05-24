@@ -4,19 +4,25 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
 import java.nio.file.Files;
-
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
-
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.text.Element;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -24,28 +30,28 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 public class vista extends JFrame {
 
+        public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new vista().setVisible(true));
+    }
+
     private JTextArea inputArea;
+    private JTextArea linesArea; 
     private JTextArea outputArea;
     private JComboBox<String> languageBox;
 
-    // COLORES TEMA VS CODE
     private static final Color BG_DARK = new Color(30, 30, 30);
     private static final Color PANEL_DARK = new Color(45, 45, 45);
     private static final Color TEXT_DARK = new Color(220, 220, 220);
+    private static final Color LINE_NUM_COLOR = new Color(133, 133, 133); 
     private static final Color ACCENT = new Color(0, 122, 204);
 
     public vista() {
-
         setTitle("GameRole IDE");
-        setSize(1100, 750);
+        setSize(1200, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-
         setLayout(new BorderLayout());
 
-        // ======================
-        // TOOLBAR (tipo VSCode)
-        // ======================
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
         topBar.setBackground(PANEL_DARK);
 
@@ -53,6 +59,7 @@ public class vista extends JFrame {
         JButton saveBtn = createButton("Guardar");
         JButton runBtn = createButton("Ejecutar");
         JButton translateBtn = createButton("Traducir");
+        JButton exportTradBtn = createButton("Exportar Traducción");
 
         languageBox = new JComboBox<>(new String[]{"Kotlin"});
         styleCombo(languageBox);
@@ -61,20 +68,42 @@ public class vista extends JFrame {
         topBar.add(saveBtn);
         topBar.add(runBtn);
         topBar.add(translateBtn);
-        topBar.add(new JLabel("  Lenguaje: "));
+        topBar.add(exportTradBtn);
+        
+        JLabel lblLang = new JLabel("  Lenguaje: ");
+        lblLang.setForeground(TEXT_DARK);
+        topBar.add(lblLang);
         topBar.add(languageBox);
 
-        // ======================
-        // EDITOR (INPUT)
-        // ======================
         inputArea = new JTextArea();
         styleEditor(inputArea);
 
-        JScrollPane inputScroll = new JScrollPane(inputArea);
+        linesArea = new JTextArea(" 1 ");
+        styleEditor(linesArea);
+        linesArea.setBackground(new Color(40, 40, 40)); 
+        linesArea.setForeground(LINE_NUM_COLOR);
+        linesArea.setEditable(false);
+        linesArea.setFocusable(false);
 
-        // ======================
-        // CONSOLA (OUTPUT)
-        // ======================
+        JScrollPane inputScroll = new JScrollPane(inputArea);
+        inputScroll.setRowHeaderView(linesArea);
+
+        inputArea.getDocument().addDocumentListener(new DocumentListener() {
+            private String getLineNumbersText() {
+                int caretPosition = inputArea.getDocument().getLength();
+                Element root = inputArea.getDocument().getDefaultRootElement();
+                StringBuilder lineNumbers = new StringBuilder(" 1 \n");
+                for (int i = 2; i <= root.getElementIndex(caretPosition) + 1; i++) {
+                    lineNumbers.append(" ").append(i).append(" \n");
+                }
+                return lineNumbers.toString();
+            }
+
+            @Override public void changedUpdate(DocumentEvent e) { linesArea.setText(getLineNumbersText()); }
+            @Override public void insertUpdate(DocumentEvent e) { linesArea.setText(getLineNumbersText()); }
+            @Override public void removeUpdate(DocumentEvent e) { linesArea.setText(getLineNumbersText()); }
+        });
+
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         styleEditor(outputArea);
@@ -89,27 +118,17 @@ public class vista extends JFrame {
         splitPane.setDividerLocation(450);
         splitPane.setBackground(BG_DARK);
 
-        // ======================
-        // ADD COMPONENTS
-        // ======================
         add(topBar, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
-
         getContentPane().setBackground(BG_DARK);
-
-        // ======================
-        // ACTIONS
-        // ======================
 
         importBtn.addActionListener(e -> importFile());
         saveBtn.addActionListener(e -> saveFile());
         runBtn.addActionListener(e -> runCode());
         translateBtn.addActionListener(e -> translateCode());
+        exportTradBtn.addActionListener(e -> exportTranslation());
     }
 
-    // ======================
-    // IMPORTAR
-    // ======================
     private void importFile() {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -122,46 +141,58 @@ public class vista extends JFrame {
         }
     }
 
-    // ======================
-    // GUARDAR
-    // ======================
     private void saveFile() {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-                Files.writeString(
-                        chooser.getSelectedFile().toPath(),
-                        inputArea.getText());
+                Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText());
+                JOptionPane.showMessageDialog(this, "Archivo original guardado con éxito.", "Guardar", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 outputArea.setText("Error guardando: " + ex.getMessage());
             }
         }
     }
 
-    // ======================
-    // EJECUTAR
-    // ======================
     private void runCode() {
+        if (inputArea.getText().trim().isEmpty()) {
+            outputArea.setText("El editor de código está vacío.");
+            return;
+        }
+
+        PrintStream originalOut = System.out;
+        PrintStream originalErr = System.err;
+
         try {
             ParseTree tree = buildTree();
 
-            LanguageCustomVisitor visitor = new LanguageCustomVisitor();
-            Simbolo result = visitor.visit(tree);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            PrintStream interceptorStream = new PrintStream(baos);
+            System.setOut(interceptorStream);
+            System.setErr(interceptorStream);
 
-            outputArea.setText(result.toString());
+            LanguageCustomVisitor visitor = new LanguageCustomVisitor();
+            visitor.visit(tree);
+
+            System.out.flush();
+            System.setOut(originalOut);
+            System.setErr(originalErr);
+
+            outputArea.setText(baos.toString());
 
         } catch (Exception ex) {
-            outputArea.setText("Error: " + ex.getMessage());
+            System.setOut(originalOut);
+            System.setErr(originalErr);
+            outputArea.setText("Error de Ejecución:\n" + ex.getMessage());
         }
     }
 
-    // ======================
-    // TRADUCIR
-    // ======================
     private void translateCode() {
+        if (inputArea.getText().trim().isEmpty()) {
+            outputArea.setText("El editor de código está vacío.");
+            return;
+        }
         try {
             ParseTree tree = buildTree();
-
             String lang = languageBox.getSelectedItem().toString();
 
             if (lang.equals("Kotlin")) {
@@ -170,24 +201,72 @@ public class vista extends JFrame {
             }
 
         } catch (Exception ex) {
-            outputArea.setText("Error: " + ex.getMessage());
+            outputArea.setText("Error de Análisis/Traducción:\n" + ex.getMessage());
         }
     }
 
-    // ======================
-    // ANTLR BUILD TREE
-    // ======================
+    private void exportTranslation() {
+        if (inputArea.getText().trim().isEmpty()) {
+            outputArea.setText("El editor de código está vacío. No hay nada que traducir.");
+            return;
+        }
+
+        try {
+            ParseTree tree = buildTree();
+            String lang = languageBox.getSelectedItem().toString();
+            String codigoTraducido = "";
+            String extension = "";
+            String descripcionFiltro = "";
+
+            if (lang.equals("Kotlin")) {
+                KotlinTraductor kt = new KotlinTraductor();
+                codigoTraducido = kt.visit(tree);
+                extension = "kt";
+                descripcionFiltro = "Archivos de Kotlin (*.kt)";
+            }
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Exportar Código Traducido a " + lang);
+
+            FileNameExtensionFilter filter = new FileNameExtensionFilter(descripcionFiltro, extension);
+            chooser.setFileFilter(filter);
+
+            chooser.setSelectedFile(new File("traduccion." + extension));
+
+            if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+                File archivoDestino = chooser.getSelectedFile();
+                String path = archivoDestino.getAbsolutePath();
+                
+                if (!path.toLowerCase().endsWith("." + extension)) {
+                    archivoDestino = new File(path + "." + extension);
+                }
+
+                Files.writeString(archivoDestino.toPath(), codigoTraducido);
+                JOptionPane.showMessageDialog(this, "Código en " + lang + " exportado con éxito.", "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
+            }
+
+        } catch (Exception ex) {
+            outputArea.setText("Error al exportar la traducción:\n" + ex.getMessage());
+        }
+    }
+
     private ParseTree buildTree() {
         CharStream input = CharStreams.fromString(inputArea.getText());
         GameRoleLexer lexer = new GameRoleLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         GameRoleParser parser = new GameRoleParser(tokens);
+        
+        parser.removeErrorListeners();
+        parser.addErrorListener(new org.antlr.v4.runtime.BaseErrorListener() {
+            @Override
+            public void syntaxError(Object recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
+                throw new RuntimeException("Error Sintáctico [Línea " + line + ":" + charPositionInLine + "] -> " + msg);
+            }
+        });
+
         return parser.programa();
     }
 
-    // ======================
-    // ESTILO EDITOR VS CODE
-    // ======================
     private void styleEditor(JTextArea area) {
         area.setBackground(BG_DARK);
         area.setForeground(TEXT_DARK);
@@ -204,29 +283,14 @@ public class vista extends JFrame {
         btn.setFont(new Font("Segoe UI", Font.PLAIN, 12));
 
         btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                btn.setBackground(ACCENT);
-            }
-
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                btn.setBackground(PANEL_DARK);
-            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) { btn.setBackground(ACCENT); }
+            public void mouseExited(java.awt.event.MouseEvent evt) { btn.setBackground(PANEL_DARK); }
         });
-
         return btn;
     }
 
     private void styleCombo(JComboBox<?> combo) {
         combo.setBackground(PANEL_DARK);
         combo.setForeground(TEXT_DARK);
-    }
-
-    // ======================
-    // MAIN
-    // ======================
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            new vista().setVisible(true);
-        });
     }
 }

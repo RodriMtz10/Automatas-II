@@ -1,6 +1,90 @@
-Juego TestRS02 Mundo_abierto
+// Inicio del juego
+Juego AventuraPro Mundo_abierto
 
-Simulacion vida = 100
-Simulacion vida = 200
+Simulacion vida = 150
+Simulacion monedas = 30
+Simulacion enemigos = 4
+Simulacion vivo = 1
+Simulacion ataque = 15
+Simulacion defensa = 3
+
+FPS("Estado inicial")
+FPS("Vida:" Lucha vida)
+FPS("Monedas:" Lucha monedas)
+FPS("Ataque:" Lucha ataque)
+
+FPS("---- INICIO DE BATALLA ----")
+
+Supervivencia(enemigos Estrategia 0) Mundo_abierto
+
+    Accion(vivo TBS 1) Mundo_abierto
+
+        FPS("Un enemigo aparece")
+
+        ataque = ataque Hack_and_slash 2
+        FPS("Ataque aumentado:" Lucha ataque)
+
+        vida = vida Beat_em_up ataque
+        FPS("El jugador recibe daño")
+        FPS("Vida restante:" Lucha vida)
+
+        ataque = ataque Soulslike defensa
+        FPS("Ataque ajustado:" Lucha ataque)
+
+        Accion(vida Estrategia 80) Mundo_abierto
+            FPS("Jugador en excelente estado")
+        Sandbox
+
+        Accion_aventura(vida CuatroX 50) Mundo_abierto
+            FPS("Jugador estable")
+        Sandbox
+
+        Accion_aventura(vida RTS 50) Mundo_abierto
+            FPS("Jugador en peligro")
+        Sandbox
+
+        Accion(vida RTS 1) Mundo_abierto
+            FPS("El jugador ha muerto")
+            vivo = 0
+        Sandbox
+
+        enemigos = enemigos Beat_em_up 1
+        FPS("Enemigos restantes:" Lucha enemigos)
+
+    Sandbox
+
+Sandbox
+
+FPS("---- ENTRENAMIENTO ----")
+
+Accion(vivo TBS 1) Mundo_abierto
+Simulacion i = 0
+    Aventura(i = 0; i RTS 3; i = i Lucha 1) Mundo_abierto
+
+        vida = vida Lucha 10
+        monedas = monedas Lucha 5
+        ataque = ataque Lucha 3
+
+        FPS("---Entrenando...---")
+        FPS("Vida:" Lucha vida)
+        FPS("Monedas:" Lucha monedas)
+        FPS("Ataque:" Lucha ataque)
+
+        Accion(ataque Estrategia 25) Mundo_abierto
+            FPS("Ataque alto")
+        Sandbox
+
+    Sandbox
+
+    FPS("---- ESTADO FINAL ----")
+    FPS("Vida final:" Lucha vida)
+    FPS("Monedas finales:" Lucha monedas)
+    FPS("Ataque final:" Lucha ataque)
+
+Sandbox
+
+Accion(vivo RTS 1) Mundo_abierto
+    FPS("El jugador no sobrevivio")
+Sandbox
 
 Sandbox

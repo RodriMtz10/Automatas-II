@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
+
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -23,6 +24,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.text.Element;
+
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -258,7 +260,6 @@ public class vista extends JFrame {
         
         parser.removeErrorListeners();
         parser.addErrorListener(new org.antlr.v4.runtime.BaseErrorListener() {
-            @Override
             public void syntaxError(Object recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
                 throw new RuntimeException("Error Sintáctico [Línea " + line + ":" + charPositionInLine + "] -> " + msg);
             }

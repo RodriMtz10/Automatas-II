@@ -1,7 +1,12 @@
 package game_role.example;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class KotlinTraductor extends GameRoleBaseVisitor<String> {
     private int indentLevel = 0;
+    
+    private Map<String, String> tablaTipos = new HashMap<>();
 
     private String getIndent() {
         return "    ".repeat(indentLevel);
@@ -9,6 +14,7 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
 
     @Override
     public String visitPrograma(GameRoleParser.ProgramaContext ctx) {
+        tablaTipos.clear();
         String nombrePrograma = ctx.ID().getText();
         StringBuilder sb = new StringBuilder();
         
@@ -50,9 +56,12 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
     public String visitDeclaracion(GameRoleParser.DeclaracionContext ctx) {
         String id = ctx.ID().getText();
         String tipoOriginal = ctx.tipo().getText();
+        
+        tablaTipos.put(id, tipoOriginal);
+        
         String expr = visit(ctx.expresion());
         
-        String tipoKotlin = switch (tipoOriginal) {
+        String tipoKt = switch (tipoOriginal) {
             case "Simulacion" -> "Int";
             case "Simulacion_vida" -> "String";
             case "Simulacion_construccion" -> "Boolean";
@@ -60,7 +69,7 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
             default -> "Any";
         };
         
-        return getIndent() + "var " + id + ": " + tipoKotlin + " = " + expr + "\n";
+        return getIndent() + "var " + id + ": " + tipoKt + " = " + expr + "\n";
     }
 
     @Override
@@ -80,18 +89,16 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
         indentLevel++;
         sb.append(visit(ctx.bloque(0)));
         indentLevel--;
-        sb.append(getIndent()).append("}");
+        sb.append(getIndent()).append("}\n");
         
         for (int i = 1; i < ctx.condicion().size(); i++) {
             String condI = visit(ctx.condicion(i));
-            sb.append(" else if (").append(condI).append(") {\n");
+            sb.append(getIndent()).append("else if (").append(condI).append(") {\n");
             indentLevel++;
             sb.append(visit(ctx.bloque(i)));
             indentLevel--;
-            sb.append(getIndent()).append("}");
+            sb.append(getIndent()).append("}\n");
         }
-        
-        sb.append("\n");
         return sb.toString();
     }
 
@@ -132,7 +139,6 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
     @Override
     public String visitImprimir(GameRoleParser.ImprimirContext ctx) {
         String expr = (ctx.expresion() != null) ? visit(ctx.expresion()) : "\"\"";
-        // FPS() y TPS() se unifican bajo la función estándar println() de Kotlin
         return getIndent() + "println(" + expr + ")\n";
     }
 
@@ -150,7 +156,6 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
             case "MOBA" -> "<=";
             default -> "==";
         };
-        
         return izq + " " + opTraducido + " " + der;
     }
 
@@ -168,8 +173,14 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
             String der = visit(ctx.expresion(1));
             String opOriginal = ctx.operadorAritmetico().getText();
             
+            if (opOriginal.equals("Lucha")) {
+                if (isString(ctx.expresion(0)) || isString(ctx.expresion(1))) {
+                    return "(" + izq + ").toString() + (" + der + ").toString()";
+                }
+                return "(" + izq + " + " + der + ")";
+            }
+            
             String opTraducido = switch (opOriginal) {
-                case "Lucha" -> "+";
                 case "Beat_em_up" -> "-";
                 case "Hack_and_slash" -> "*";
                 case "Soulslike" -> "/";
@@ -183,5 +194,26 @@ public class KotlinTraductor extends GameRoleBaseVisitor<String> {
             return "(" + visit(ctx.expresion(0)) + ")";
         }
         return "";
+    }
+
+    private boolean isString(GameRoleParser.ExpresionContext ctx) {
+        if (ctx == null) return false;
+        if (ctx.STRING() != null) return true;
+        
+        if (ctx.ID() != null) {
+            String tipo = tablaTipos.get(ctx.ID().getText());
+            return "Simulacion_vida".equals(tipo);
+        }
+        
+        if (ctx.expresion().size() == 2 && ctx.operadorAritmetico() != null) {
+            if (ctx.operadorAritmetico().getText().equals("Lucha")) {
+                return isString(ctx.expresion(0)) || isString(ctx.expresion(1));
+            }
+        }
+        
+        if (ctx.expresion().size() == 1) {
+            return isString(ctx.expresion(0));
+        }
+        return false;
     }
 }

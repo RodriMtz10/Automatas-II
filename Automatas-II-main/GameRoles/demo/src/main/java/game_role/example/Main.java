@@ -40,7 +40,6 @@ public class Main {
             LanguageCustomVisitor visitor = new LanguageCustomVisitor();
             visitor.visit(tree);
 
-            // Kotlin Traductor
             KotlinTraductor traductor = new KotlinTraductor();
             String codigoKotlin = traductor.visit(tree);
 

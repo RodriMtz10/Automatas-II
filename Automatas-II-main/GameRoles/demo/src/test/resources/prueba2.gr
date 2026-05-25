@@ -1,0 +1,118 @@
+// ==========================================
+// EVIDENCIA DE ALGORITMOS EN GAMEROLE
+// ==========================================
+Juego EvidenciaAlgoritmos Mundo_abierto
+
+    // ------------------------------------------
+    // 1. CALCULO DE FACTORIAL (Factorial de 5)
+    // ------------------------------------------
+    FPS("--- 1. CALCULO DE FACTORIAL ---")
+    Simulacion nFact = 5
+    Simulacion fact = 1
+    Simulacion f = 1
+    
+    Aventura(f = 1; f MOBA nFact; f = f Lucha 1) Mundo_abierto
+        fact = fact Hack_and_slash f
+    Sandbox
+    
+    FPS("El factorial de 5 es: " Lucha fact)
+
+
+    // ------------------------------------------
+    // 2. SERIE FIBONACCI (Primeros 7 numeros)
+    // ------------------------------------------
+    FPS("--- 2. SERIE FIBONACCI ---")
+    Simulacion a = 0
+    Simulacion b = 1
+    Simulacion temp = 0
+    Simulacion limFibo = 7
+    Simulacion fib = 0
+    
+    FPS("Generando serie:")
+    Aventura(fib = 0; fib RTS limFibo; fib = fib Lucha 1) Mundo_abierto
+        FPS(a)
+        temp = a Lucha b
+        a = b
+        b = temp
+    Sandbox
+
+
+    // ------------------------------------------
+    // 3. NUMEROS PRIMOS (Validar si 7 es primo)
+    // ------------------------------------------
+    FPS("--- 3. NUMEROS PRIMOS ---")
+    Simulacion numPrimo = 7
+    Simulacion esPrimo = 1
+    Simulacion divisor = 2
+    Simulacion modRes = 0
+    
+    Supervivencia(divisor RTS numPrimo) Mundo_abierto
+        modRes = numPrimo Roguelike divisor
+        
+        Accion(modRes TBS 0) Mundo_abierto
+            esPrimo = 0
+        Sandbox
+        
+        divisor = divisor Lucha 1
+    Sandbox
+    
+    Accion(esPrimo TBS 1) Mundo_abierto
+        FPS("El numero 7 SI es primo")
+    Sandbox
+    Accion_aventura(esPrimo TBS 0) Mundo_abierto
+        FPS("El numero 7 NO es primo")
+    Sandbox
+
+
+    // ------------------------------------------
+    // 4. TABLAS DE MULTIPLICAR (Tabla del 5)
+    // ------------------------------------------
+    FPS("--- 4. TABLAS DE MULTIPLICAR ---")
+    Simulacion tabla = 5
+    Simulacion t = 1
+    Simulacion resTabla = 0
+    
+    Aventura(t = 1; t MOBA 5; t = t Lucha 1) Mundo_abierto
+        resTabla = tabla Hack_and_slash t
+        FPS(tabla Lucha " x " Lucha t Lucha " = " Lucha resTabla)
+    Sandbox
+
+
+    // ------------------------------------------
+    // 5. MAXIMO COMUN DIVISOR (MCD de 56 y 98)
+    // ------------------------------------------
+    FPS("--- 5. MAXIMO COMUN DIVISOR (MCD) ---")
+    Simulacion numA = 56
+    Simulacion numB = 98
+    Simulacion tmpMcd = 0
+    
+    Supervivencia(numB Estrategia 0) Mundo_abierto
+        tmpMcd = numB
+        numB = numA Roguelike numB
+        numA = tmpMcd
+    Sandbox
+    
+    FPS("El MCD de 56 y 98 es: " Lucha numA)
+
+
+    // ------------------------------------------
+    // 6. SUMATORIAS Y PROMEDIOS (Del 1 al 5)
+    // ------------------------------------------
+    FPS("--- 6. SUMATORIAS Y PROMEDIOS ---")
+    Simulacion sumaTotal = 0
+    Simulacion cantNum = 5
+    Simulacion s = 1
+    Simulacion promedio = 0
+    
+    // Sumatoria
+    Aventura(s = 1; s MOBA cantNum; s = s Lucha 1) Mundo_abierto
+        sumaTotal = sumaTotal Lucha s
+    Sandbox
+    
+    // Promedio
+    promedio = sumaTotal Soulslike cantNum
+    
+    FPS("La sumatoria de 1 a 5 es: " Lucha sumaTotal)
+    FPS("El promedio es: " Lucha promedio)
+
+Sandbox

@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -28,6 +29,7 @@ import javax.swing.text.Element;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class vista extends JFrame {
@@ -135,7 +137,8 @@ public class vista extends JFrame {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-String code = Files.readString(chooser.getSelectedFile().toPath(), java.nio.charset.StandardCharsets.UTF_8);                inputArea.setText(code);
+                String code = Files.readString(chooser.getSelectedFile().toPath(), StandardCharsets.UTF_8);
+                inputArea.setText(code);
             } catch (Exception ex) {
                 outputArea.setText("Error importando: " + ex.getMessage());
             }
@@ -146,7 +149,9 @@ String code = Files.readString(chooser.getSelectedFile().toPath(), java.nio.char
         JFileChooser chooser = new JFileChooser();
         if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
-Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), java.nio.charset.StandardCharsets.UTF_8);            } catch (Exception ex) {
+                Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), StandardCharsets.UTF_8);
+                JOptionPane.showMessageDialog(this, "Archivo guardado con éxito.", "Guardar", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
                 outputArea.setText("Error guardando: " + ex.getMessage());
             }
         }
@@ -160,28 +165,72 @@ Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), java.
 
         PrintStream originalOut = System.out;
         PrintStream originalErr = System.err;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream interceptorStream = new PrintStream(baos);
+
+        System.setOut(interceptorStream);
+        System.setErr(interceptorStream);
+
+        StringBuilder reporte = new StringBuilder();
+        reporte.append("========== RESULTADO DE EJECUCIÓN ==========\n\n");
 
         try {
             ParseTree tree = buildTree();
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            PrintStream interceptorStream = new PrintStream(baos);
-            System.setOut(interceptorStream);
-            System.setErr(interceptorStream);
 
             LanguageCustomVisitor visitor = new LanguageCustomVisitor();
             visitor.visit(tree);
 
             System.out.flush();
-            System.setOut(originalOut);
-            System.setErr(originalErr);
+            String salida = baos.toString();
 
-            outputArea.setText(baos.toString());
+            reporte.append("--- Mensajes de salida del programa ---\n");
+            if (salida.isEmpty()) {
+                reporte.append("(No hubo salidas / prints)\n");
+            } else {
+                reporte.append(salida);
+            }
+
+            reporte.append("\n--- Reporte de Errores ---\n");
+            reporte.append("• Errores Léxicos: 0\n");
+            reporte.append("• Errores Sintácticos: 0\n");
+            reporte.append("• Errores Semánticos: 0\n");
+            reporte.append("\n[✓] Ejecución finalizada con éxito.");
 
         } catch (Exception ex) {
+            System.out.flush();
+            String salida = baos.toString();
+
+            reporte.append("--- Mensajes de salida del programa (Hasta el error) ---\n");
+            if (salida.isEmpty()) {
+                reporte.append("(Ninguna salida previa al error)\n");
+            } else {
+                reporte.append(salida);
+            }
+
+            reporte.append("\n--- Reporte de Errores ---\n");
+            
+            String msg = ex.getMessage();
+            if (msg == null) msg = ex.toString();
+
+            if (msg.contains("ERROR LÉXICO")) {
+                reporte.append("• Errores Léxicos: 1\n  └ Detalle: ").append(msg.replace("ERROR LÉXICO: ", "")).append("\n");
+                reporte.append("• Errores Sintácticos: 0\n• Errores Semánticos: 0\n");
+            } else if (msg.contains("ERROR SINTÁCTICO")) {
+                reporte.append("• Errores Léxicos: 0\n");
+                reporte.append("• Errores Sintácticos: 1\n  └ Detalle: ").append(msg.replace("ERROR SINTÁCTICO: ", "")).append("\n");
+                reporte.append("• Errores Semánticos: 0\n");
+            } else if (msg.contains("[RS")) { 
+                reporte.append("• Errores Léxicos: 0\n• Errores Sintácticos: 0\n");
+                reporte.append("• Errores Semánticos: 1\n  └ Detalle: ").append(msg).append("\n");
+            } else {
+                reporte.append("• Error General / Interno de Java:\n  └ ").append(msg).append("\n");
+            }
+
+            reporte.append("\n[X] Ejecución detenida debido a errores.");
+        } finally {
             System.setOut(originalOut);
             System.setErr(originalErr);
-            outputArea.setText("Error de Ejecución:\n" + ex.getMessage());
+            outputArea.setText(reporte.toString());
         }
     }
 
@@ -196,30 +245,18 @@ Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), java.
             String codigoTraducido = "";
 
             switch (lang) {
-                case "Kotlin":
-                    codigoTraducido = new KotlinTraductor().visit(tree);
-                    break;
-                case "Python":
-                    codigoTraducido = new PythonTraductor().visit(tree);
-                    break;
-                case "C":
-                    codigoTraducido = new CTraductor().visit(tree);
-                    break;
-                case "Go":
-                    codigoTraducido = new GoTraductor().visit(tree);
-                    break;
-                case "C#":
-                    codigoTraducido = new CSharpTraductor().visit(tree);
-                    break;
-                default:
-                    codigoTraducido = "// Lenguaje no soportado.";
-                    break;
+                case "Kotlin": codigoTraducido = new KotlinTraductor().visit(tree); break;
+                case "Python": codigoTraducido = new PythonTraductor().visit(tree); break;
+                case "C":      codigoTraducido = new CTraductor().visit(tree); break;
+                case "Go":     codigoTraducido = new GoTraductor().visit(tree); break;
+                case "C#":     codigoTraducido = new CSharpTraductor().visit(tree); break;
+                default:       codigoTraducido = "// Lenguaje no soportado."; break;
             }
 
             outputArea.setText(codigoTraducido);
 
         } catch (Exception ex) {
-            outputArea.setText("Error de Análisis/Traducción:\n" + ex.getMessage());
+            outputArea.setText("No se puede traducir el código porque contiene errores:\n" + ex.getMessage());
         }
     }
 
@@ -239,37 +276,25 @@ Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), java.
             switch (lang) {
                 case "Kotlin":
                     codigoTraducido = new KotlinTraductor().visit(tree);
-                    extension = "kt";
-                    descripcionFiltro = "Archivos de Kotlin (*.kt)";
-                    break;
+                    extension = "kt"; descripcionFiltro = "Archivos de Kotlin (*.kt)"; break;
                 case "Python":
                     codigoTraducido = new PythonTraductor().visit(tree);
-                    extension = "py";
-                    descripcionFiltro = "Archivos de Python (*.py)";
-                    break;
+                    extension = "py"; descripcionFiltro = "Archivos de Python (*.py)"; break;
                 case "C":
                     codigoTraducido = new CTraductor().visit(tree);
-                    extension = "c";
-                    descripcionFiltro = "Archivos de C (*.c)";
-                    break;
+                    extension = "c"; descripcionFiltro = "Archivos de C (*.c)"; break;
                 case "Go":
                     codigoTraducido = new GoTraductor().visit(tree);
-                    extension = "go";
-                    descripcionFiltro = "Archivos de Go (*.go)";
-                    break;
+                    extension = "go"; descripcionFiltro = "Archivos de Go (*.go)"; break;
                 case "C#":
                     codigoTraducido = new CSharpTraductor().visit(tree);
-                    extension = "cs";
-                    descripcionFiltro = "Archivos de C# (*.cs)";
-                    break;
+                    extension = "cs"; descripcionFiltro = "Archivos de C# (*.cs)"; break;
             }
 
             JFileChooser chooser = new JFileChooser();
             chooser.setDialogTitle("Exportar Código Traducido a " + lang);
-
             FileNameExtensionFilter filter = new FileNameExtensionFilter(descripcionFiltro, extension);
             chooser.setFileFilter(filter);
-
             chooser.setSelectedFile(new File("traduccion." + extension));
 
             if (chooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
@@ -280,26 +305,35 @@ Files.writeString(chooser.getSelectedFile().toPath(), inputArea.getText(), java.
                     archivoDestino = new File(path + "." + extension);
                 }
 
-                Files.writeString(archivoDestino.toPath(), codigoTraducido, java.nio.charset.StandardCharsets.UTF_8);
+                Files.writeString(archivoDestino.toPath(), codigoTraducido, StandardCharsets.UTF_8);
                 JOptionPane.showMessageDialog(this, "Código en " + lang + " exportado con éxito.", "Exportación Exitosa", JOptionPane.INFORMATION_MESSAGE);
             }
 
         } catch (Exception ex) {
-            outputArea.setText("Error al exportar la traducción:\n" + ex.getMessage());
+            outputArea.setText("Error al exportar la traducción (hay un error en tu código):\n" + ex.getMessage());
         }
     }
 
     private ParseTree buildTree() {
         CharStream input = CharStreams.fromString(inputArea.getText());
         GameRoleLexer lexer = new GameRoleLexer(input);
+        
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new org.antlr.v4.runtime.BaseErrorListener() {
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
+                throw new RuntimeException("ERROR LÉXICO: [Línea " + line + ":" + charPositionInLine + "] -> " + msg);
+            }
+        });
+
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         GameRoleParser parser = new GameRoleParser(tokens);
         
         parser.removeErrorListeners();
         parser.addErrorListener(new org.antlr.v4.runtime.BaseErrorListener() {
-            
-            public void syntaxError(Object recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
-                throw new RuntimeException("Error Sintáctico [Línea " + line + ":" + charPositionInLine + "] -> " + msg);
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, org.antlr.v4.runtime.RecognitionException e) {
+                throw new RuntimeException("ERROR SINTÁCTICO: [Línea " + line + ":" + charPositionInLine + "] -> Se esperaba otra estructura, pero se encontró un error: " + msg);
             }
         });
 

@@ -179,17 +179,21 @@ public class LanguageCustomVisitor extends GameRoleBaseVisitor<Simbolo> {
                     res = a / b;
                     break;
                 case "Roguelike":
-                    if (!(izq.valor instanceof Integer) || !(der.valor instanceof Integer)) {
+                    if (a != (int) a || b != (int) b) {
                         throw error("RS03", "El operador Roguelike solo acepta enteros", ctx.getStart().getLine());
                     }
-                    int ia = (Integer) izq.valor;
-                    int ib = (Integer) der.valor;
+                    int ia = (int) a;
+                    int ib = (int) b;
 
                     if (ib == 0)
                         throw error("RS04", "No se puede dividir entre cero", ctx.getStart().getLine());
                     return new Simbolo("int", ia % ib);
                 default:
                     throw error("RS08", "Operador no válido en el lenguaje", ctx.getStart().getLine());
+            }
+            
+            if (res == (int) res) {
+                return new Simbolo("int", (int) res);
             }
             return new Simbolo("float", res);
         }

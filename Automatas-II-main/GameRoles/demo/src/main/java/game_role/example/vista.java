@@ -42,7 +42,7 @@ import javax.swing.text.StyledDocument;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Recognizer;
+    import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class vista extends JFrame {
@@ -51,7 +51,6 @@ public class vista extends JFrame {
         SwingUtilities.invokeLater(() -> new vista().setVisible(true));
     }
 
-    // Componentes de la UI
     private JTextPane inputArea; 
     private JTextArea linesArea; 
     private JTextArea outputArea;
@@ -66,37 +65,32 @@ public class vista extends JFrame {
     private JButton helpBtn;
     private JLabel lblLang;
     
-    // Panel lateral de ayuda
     private JPanel helpPanel;
     private JTextArea helpText;
 
     private List<JButton> standardButtons = new ArrayList<>();
 
-    // Paleta de Colores - Xbox
     private static final Color XBOX_GREEN = new Color(16, 124, 16); 
-    private static final Color XBOX_GREEN_HOVER = new Color(57, 255, 20); // Verde Neón Chillón
+    private static final Color XBOX_GREEN_HOVER = new Color(57, 255, 20); 
     private static final Color LINE_NUM_COLOR = new Color(130, 130, 130);
 
-    // Variables de Tema Actual
     private Color bgCurrent;
     private Color panelCurrent;
     private Color textCurrent;
-    private boolean isLightTheme = false; // Comienza en Tema Oscuro
-    private boolean isHighlighting = false; // Candado de eficiencia
+    private boolean isLightTheme = false;
+    private boolean isHighlighting = false;
 
     public vista() {
-        setTitle("GameRole IDE - Editor Profesional");
+        setTitle("GameRole IDE");
         setSize(1250, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        // --- INICIALIZACIÓN DE COLORES ---
-        bgCurrent = new Color(18, 18, 18); // Negro profundo
-        panelCurrent = new Color(35, 35, 35); // Gris oscuro
-        textCurrent = new Color(240, 240, 240); // Blanco hueso
+        bgCurrent = new Color(18, 18, 18); 
+        panelCurrent = new Color(35, 35, 35);
+        textCurrent = new Color(240, 240, 240);
 
-        // --- BARRA SUPERIOR DIVIDIDA ---
         topBar = new JPanel(new BorderLayout());
         topBar.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
@@ -105,13 +99,11 @@ public class vista extends JFrame {
         rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         rightPanel.setOpaque(false);
 
-        // Botones Estándar
         JButton importBtn = createStandardButton("Importar");
         JButton saveBtn = createStandardButton("Guardar");
         JButton translateBtn = createStandardButton("Traducir");
         JButton exportTradBtn = createStandardButton("Exportar");
 
-        // Selector de Lenguaje
         languageBox = new JComboBox<>(new String[]{"Kotlin", "Python", "C", "Go", "C#"});
         styleCombo(languageBox);
         lblLang = new JLabel("Destino:");
@@ -125,7 +117,6 @@ public class vista extends JFrame {
         leftPanel.add(lblLang);
         leftPanel.add(languageBox);
 
-        // Botones Especiales (Derecha)
         helpBtn = createStandardButton("Guía");
         themeBtn = createStandardButton("Tema: Blanco");
         
@@ -139,7 +130,6 @@ public class vista extends JFrame {
         topBar.add(leftPanel, BorderLayout.WEST);
         topBar.add(rightPanel, BorderLayout.EAST);
 
-        // --- ÁREA DE CÓDIGO (JTextPane con Colores) ---
         inputArea = new JTextPane() {
             @Override
             public boolean getScrollableTracksViewportWidth() {
@@ -164,7 +154,6 @@ public class vista extends JFrame {
         inputScroll.setRowHeaderView(linesArea);
         inputScroll.setBorder(null);
 
-        // Escuchador que actualiza las líneas y aplica los colores
         inputArea.getDocument().addDocumentListener(new DocumentListener() {
             private void updateEditor() {
                 SwingUtilities.invokeLater(() -> {
@@ -183,7 +172,6 @@ public class vista extends JFrame {
             @Override public void removeUpdate(DocumentEvent e) { updateEditor(); }
         });
 
-        // --- ÁREA DE CONSOLA DE SALIDA ---
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         outputArea.setFont(new Font("Consolas", Font.PLAIN, 14));
@@ -197,7 +185,6 @@ public class vista extends JFrame {
         splitPane.setDividerSize(5);
         splitPane.setBorder(null);
 
-        // --- PANEL LATERAL DE AYUDA (CHEAT SHEET) ---
         helpPanel = new JPanel(new BorderLayout());
         helpPanel.setPreferredSize(new Dimension(300, 0));
         helpPanel.setBorder(BorderFactory.createMatteBorder(0, 3, 0, 0, XBOX_GREEN));
@@ -219,19 +206,16 @@ public class vista extends JFrame {
         helpScroll.setBorder(null);
         helpPanel.add(helpScroll, BorderLayout.CENTER);
         
-        helpPanel.setVisible(false); // Oculto por defecto
+        helpPanel.setVisible(false);
 
-        // Añadir componentes al marco
         add(topBar, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
         add(helpPanel, BorderLayout.EAST);
         
-        applyTheme(); // Aplica colores iniciales
+        applyTheme();
 
-        // --- HELLO WORLD AUTOMÁTICO ---
         setHelloWorldCode();
 
-        // --- ACCIONES ---
         importBtn.addActionListener(e -> importFile());
         saveBtn.addActionListener(e -> saveFile());
         runBtn.addActionListener(e -> runCode());
@@ -241,7 +225,6 @@ public class vista extends JFrame {
         helpBtn.addActionListener(e -> helpPanel.setVisible(!helpPanel.isVisible())); // Alternar visibilidad
     }
 
-    // --- CÓDIGO INICIAL (Hello World) ---
     private void setHelloWorldCode() {
         String welcomeCode = 
             "// ¡Bienvenido a GameRole IDE!\n" +
@@ -255,7 +238,6 @@ public class vista extends JFrame {
         inputArea.setText(welcomeCode);
     }
 
-    // --- TEXTO DE AYUDA LATERAL ---
     private String getGrammarHelpText() {
         return 
             "--- ESTRUCTURAS BÁSICAS ---\n" +
@@ -294,7 +276,6 @@ public class vista extends JFrame {
             "MOBA           -> Menor o igual (<=)\n";
     }
 
-    // --- CARGA Y OPTIMIZACIÓN DE ESTILOS DE TEXTO ---
     private void updateStyles() {
         Style defaultStyle = inputArea.getStyle("Default");
         if (defaultStyle == null) defaultStyle = inputArea.addStyle("Default", null);
@@ -338,7 +319,6 @@ public class vista extends JFrame {
         StyleConstants.setBold(commentStyle, false);
     }
 
-    // --- MAGIA: COLOREADO DE SINTAXIS AVANZADO ---
     private void applySyntaxHighlighting() {
         if (isHighlighting) return;
         
@@ -383,7 +363,6 @@ public class vista extends JFrame {
         });
     }
 
-    // --- TEMAS (BLANCO Y NEGRO) ---
     private void toggleTheme() {
         isLightTheme = !isLightTheme;
         if (isLightTheme) {
@@ -410,8 +389,7 @@ public class vista extends JFrame {
         languageBox.setBackground(bgCurrent);
         languageBox.setForeground(textCurrent);
         lblLang.setForeground(textCurrent);
-        
-        // Colores del Panel de Ayuda
+
         helpPanel.setBackground(panelCurrent);
         helpText.setBackground(panelCurrent);
         helpText.setForeground(textCurrent);
@@ -431,7 +409,6 @@ public class vista extends JFrame {
         applySyntaxHighlighting(); 
     }
 
-    // --- ESTILOS DE BOTONES ---
     private JButton createStandardButton(String text) {
         JButton btn = new JButton(text);
         btn.setFocusPainted(false);
@@ -476,7 +453,6 @@ public class vista extends JFrame {
         combo.setCursor(new Cursor(Cursor.HAND_CURSOR));
     }
 
-    // --- LÓGICA DEL COMPILADOR ---
     private void importFile() {
         JFileChooser chooser = new JFileChooser();
         if (chooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
